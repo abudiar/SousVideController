@@ -132,7 +132,7 @@ export default {
             p {
                 margin: 0;
                 padding: 0;
-                font-size: .7em;
+                font-size: .8em;
                 font-weight: light;
                 color: white;
             }
@@ -162,17 +162,18 @@ export default {
                     grid-template-rows: auto;
                     grid-template-areas: 
                         "temp sup";
-                    margin-bottom: -.3em;
+                    margin-bottom: -.6em;
                     .temp {
                         grid-area: temp;
-                        font-size: 2.5em;
+                        font-size: 2.8em;
                         text-align: right;
+                        font-weight: 400;
                     }
                     .sup {
                         grid-area: sup;
                         font-size: 1.5em;
                         text-align: left;
-                        padding-top: 0.2em;
+                        padding-top: 0.4em;
                         color: rgba(255, 255, 255, 0.6);
                     }
                 }

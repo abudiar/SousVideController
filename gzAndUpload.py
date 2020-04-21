@@ -28,5 +28,5 @@ copy_tree(source_dir, dest_dir)
 # for path in Path(dest_dir).rglob('*'):
 #     print(path.name)
 
-os.system('gzip -r ' + dest_dir + '\*')
-os.system(r'C:\Users\alanw\.platformio\penv\Scripts\platformio.exe run --target uploadfs')
+os.system('gzip -r ' + dest_dir)
+os.system(r'C:\Users\Alan\.platformio\penv\Scripts\platformio.exe run --target uploadfs')

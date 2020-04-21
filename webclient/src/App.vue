@@ -19,7 +19,7 @@
   //   src: url("assets/Montserrat-Regular.ttf"); 
   // }
   @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300&display=swap');
-  font-family: 'Montserrat', sans-serif;
+  font-family: BlinkMacSystemFont, -apple-system, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
   font-weight: 300;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

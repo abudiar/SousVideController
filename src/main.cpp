@@ -34,9 +34,9 @@
 #pragma endregion
 
 #pragma region Pins
-#define heaterPin D7  // Heater Relay pin
+#define heaterPin D5  // Heater Relay pin
 #define builtinLed D4 // Built in LED
-#define tempBus D5    // Temperature Probes
+#define tempBus D7    // Temperature Probes
 #define OLED_RESET -1 // Reset pin # (or -1 if sharing Arduino reset pin)
 #pragma endregion
 
