@@ -1,2 +1,4 @@
 Import("env")
-env.Replace(MKSPIFFSTOOL='C:\Users\\alanw\.platformio\packages\\tool-mklittlefs\mklittlefs')
+import os
+cwd = os.getcwd()
+env.Replace(MKSPIFFSTOOL=cwd+'mklittlefs')
