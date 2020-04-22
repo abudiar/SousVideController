@@ -8,11 +8,15 @@ Vue.use(Vuex)
 
 export default new Vuex.Store({
   state: {
-    temp: 166.5,
+    temp: 0,
     scale: 'C',
-    target: 166.5,
-    state: 'preheat',
-    isConnected: false
+    target: 0,
+    state: '',
+    isConnected: false,
+    firstRun: true,
+    kp: 0,
+    ki: 0,
+    kd: 0
   },
   getters: {
     status(state) {
@@ -39,51 +43,95 @@ export default new Vuex.Store({
       if (getters.status == 'nc') 
         return '';
       return state.state;
-    }
+    },
+    targetText(state, getters) {
+      if (getters.status == 'nc') 
+        return '';
+      switch(state.scale) {
+        case 'C':
+          return state.target;
+        case 'F':
+          return Math.round(((state.target * 9) / 5 + 32) * 100) / 100;
+      }
+    },
   },
   mutations: {
     updateData(state, payload){
       for(let key in payload){
-        console.log('Updating', key, 'with:', payload[key]);
-        state[key] = payload[key];
+        if (state[key] != payload[key]) {
+          console.log('Updating', key, 'with:', payload[key]);
+          state[key] = payload[key];
+        }
       }
-      // if (payload.temp)
-      //   state.temp = payload.temp;
-      // if (payload.scale)
-      //   state.scale = payload.scale;
-      // if (payload.target)
-      //   state.target = payload.target;
-      // if (payload.state)
-      //   state.state = payload.state;
-      // if (payload.isConnected)
-      //   state.isConnected = payload.isConnected;
-      // if (payload.kp)
-      //   state.kp = payload.kp;
-      // if (payload.ki)
-      //   state.ki = payload.ki;
-      // if (payload.kd)
-      //   state.kd = payload.kd;
-    }
+    },
   },
   actions: {
-    fetch({commit}) {
-      Vue.axios.get('/fetch')
+    getData({/* state, */commit}) {
+      Vue.axios.get('/data')
         .then((response) => {
-          console.log(response);
+          console.log('getData', response);
           commit({
-            type: 'updateData',
+            ...response.data,
             isConnected: true,
-            ...response.data
+            firstRun: false,
+            type: 'updateData',
           })
         })
         .catch((err) => {
           commit({
+            firstRun: true,
+            isConnected: false,
             type: 'updateData',
-            isConnected: false
           })
-          console.log(err)
+          console.log('getData', err)
         });
-    }
+    },
+    postData: function({state,commit}, payload) {
+      const oldState = {...state}
+      commit({
+        ...payload,
+        type: 'updateData'
+      })
+      Vue.axios.post('/data?data=' + JSON.stringify(payload))
+        .then((response) => {
+          console.log('postData', response);
+          commit({
+            ...response.data,
+            isConnected: true,
+            firstRun: false,
+            type: 'updateData',
+          })
+        })
+        .catch((err) => {
+          commit({
+            ...oldState,
+            isConnected: false,
+            firstRun: true,
+            type: 'updateData',
+          })
+          console.log('postData', err)
+        });
+    },
+    postCommand({state, commit}, payload) {
+      const oldState = {...state}
+      commit({
+        ...payload,
+        type: 'updateData',
+      })
+      Vue.axios.post('/command?command=' + payload.command)
+        .then((response) => {
+          console.log('postCommand', response);
+        })
+        .catch((err) => {
+          commit({
+            ...oldState,
+            type: 'updateData',
+            isConnected: false,
+            firstRun: true,
+          })
+          console.log('postCommand', err)
+        });
+    },
   },
   modules: {
   }

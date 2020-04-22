@@ -914,64 +914,61 @@ String getState()
   }
   return "";
 }
-// Process command from webpage
-String processCommand(String cmd)
-{
-  if (cmd == "start")
-  {
-    Serial.println("Starting Sous Vide");
-    start = true;
-    startTime = now();
-    return "Started Sous Vide";
-  }
-  else if (cmd == "stop")
-  {
-    Serial.println("Stopping Sous Vide");
-    start = false;
-    opState = OFF;
-    return "Stopped Sous Vide";
-  }
-  else if (cmd == "autotune")
-  {
-    Serial.println("Starting Autotune");
-    StartAutoTune();
-    return "Autotune started";
-  }
-  return "Invalid command";
-}
 
 // Process settings from json of webpage
 String processSettings(StaticJsonDocument<256> data)
 {
-  if (data.containsKey("pageNum") == 1)
-  {
-    int pageNum = data["pageNum"].as<int>();
-    if (pageNum == 0 && data.containsKey("scale") == 1 && data.containsKey("target") == 1)
-    {
-      if (data["scale"].as<String>() == "C")
-      {
-        useCelcius = true;
-      }
-      else
-      {
-        useCelcius = false;
-      }
-      Setpoint = data["target"].as<double>();
-      savePars();
-      DoControl();
-      return "Settings on Home Page Saved";
-    }
-    else if (pageNum == 1 && data.containsKey("kp") == 1 && data.containsKey("ki") == 1 && data.containsKey("kd") == 1)
-    {
-      Kp = data["kp"].as<double>();
-      Ki = data["ki"].as<double>();
-      Kd = data["kd"].as<double>();
-      savePars();
-      DoControl();
-      return "Settings on Settings Page Saved";
-    }
+  String result = "Updated ";
+  if (data.containsKey("scale") == 1) {
+    if (data["scale"].as<String>() == "C")
+      useCelcius = true;
+    else
+      useCelcius = false;
+    result += "| useCelcius ";
   }
-  return "Invalid Settings";
+  if (data.containsKey("target") == 1) {
+    Setpoint = data["target"].as<double>();
+    result += "| Setpoint ";
+  }
+  if (data.containsKey("kp") == 1) {
+      Kp = data["kp"].as<double>();
+    result += "| Kp ";
+  }
+  if (data.containsKey("ki") == 1) {
+      Ki = data["ki"].as<double>();
+    result += "| Ki ";
+  }
+  if (data.containsKey("kd") == 1) {
+      Kd = data["kd"].as<double>();
+    result += "| Kd ";
+  }
+  savePars();
+  DoControl();
+  
+  String stringData = "";
+  serializeJson(data, stringData);
+  // Serial.println(stringData);
+  return stringData;
+  // return result;
+  // if (data.containsKey("pageNum") == 1)
+  // {
+  //   int pageNum = data["pageNum"].as<int>();
+  //   if (pageNum == 0 && data.containsKey("scale") == 1 && data.containsKey("target") == 1)
+  //   {
+  //     savePars();
+  //     DoControl();
+  //     return "Settings on Home Page Saved";
+  //   }
+  //   else if (pageNum == 1 && data.containsKey("kp") == 1 && data.containsKey("ki") == 1 && data.containsKey("kd") == 1)
+  //   {
+  //     Kp = data["kp"].as<double>();
+  //     Ki = data["ki"].as<double>();
+  //     Kd = data["kd"].as<double>();
+  //     savePars();
+  //     DoControl();
+  //     return "Settings on Settings Page Saved";
+  //   }
+  // }
 }
 
 String packSettings()
@@ -988,6 +985,33 @@ String packSettings()
   serializeJson(dataObj, stringData);
   // Serial.println(stringData);
   return stringData;
+}
+// Process command from webpage
+String processCommand(String cmd)
+{
+  if (cmd == "start")
+  {
+    Serial.println("Starting Sous Vide");
+    start = true;
+    startTime = now();
+    return packSettings();
+  }
+  else if (cmd == "stop")
+  {
+    Serial.println("Stopping Sous Vide");
+    start = false;
+    opState = OFF;
+    return packSettings();
+  }
+  else if (cmd == "autotune")
+  {
+    Serial.println("Starting Autotune");
+    StartAutoTune();
+    start = true;
+    startTime = now();
+    return packSettings();
+  }
+  return "Invalid command";
 }
 
 String getContentType(AsyncWebServerRequest *request, String filename)
@@ -1082,7 +1106,7 @@ bool handleFileRead(AsyncWebServerRequest *request, String path)
 #pragma region Server
 void setupServer()
 {
-  server.on("/update", HTTP_GET, [](AsyncWebServerRequest *request) {
+  server.on("/data", HTTP_POST, [](AsyncWebServerRequest *request) {
     printServerRequest(request);
     StaticJsonDocument<256> data;
     if (request->hasParam("data"))
@@ -1099,7 +1123,7 @@ void setupServer()
     request->send_P(200, "text/plain", processSettings(data).c_str());
   });
 
-  server.on("/command", HTTP_GET, [](AsyncWebServerRequest *request) {
+  server.on("/command", HTTP_POST, [](AsyncWebServerRequest *request) {
     printServerRequest(request);
     bool isSuccess = false;
     String cmd = "";
@@ -1112,7 +1136,7 @@ void setupServer()
       request->send_P(200, "text/plain", BoolToString(false));
   });
 
-  server.on("/fetch", HTTP_GET, [](AsyncWebServerRequest *request) {
+  server.on("/data", HTTP_GET, [](AsyncWebServerRequest *request) {
     printServerRequest(request);
     request->send_P(200, "text/plain", packSettings().c_str());
   });
@@ -1189,6 +1213,13 @@ void Off()
   String tempText = (String)roundTemp + "C";
   printCenterX(tempText, rTempDisp);
   printCenterX("OFF", rPctDisp);
+  // Read the input:
+  if (sensors.isConversionComplete())
+  {
+    Input = sensors.getTempC(tempDeviceAddress);
+    saveTempArray(Input, 1, dispTemp);
+    sensors.requestTemperatures(); // prime the pump for the next one - but don't wait
+  }
 
   if (start)
   {

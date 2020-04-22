@@ -11,7 +11,7 @@
           <input class="inputText" 
             align="right" 
             :type="inputType" 
-            :value="input" 
+            :value="inputType == 'number' ? Number(input) : input" 
             @change="$emit('input', $event.target.value)"
             @focus="isFocused = true"
             @blur="isFocused = false"/>

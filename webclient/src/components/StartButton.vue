@@ -1,7 +1,7 @@
 <template>
     <div class="start-button">
         <div class="wrap-btn transition" :class="btnClass">
-            <button class="btn transition">
+            <button class="btn transition" @click="$store.dispatch({type: 'postCommand', command: btnText.toLowerCase()})">
                 {{ btnText }}
             </button>
         </div>

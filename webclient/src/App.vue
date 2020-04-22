@@ -1,6 +1,10 @@
 <template>
   <div id="app">
-    <Home class="home" @showSettings="showSettings = true"/>
+    <Home class="home" @showSettings="showSettings = true"
+      :class="{'showSettings': showSettings}"/>
+    <div class="hider transition" @click="showSettings = false"
+      :class="{'showSettings': showSettings}">
+      </div>
     <Settings class="settings" @hideSettings="showSettings = false"
       :class="{'showSettings': showSettings}"/>
   </div>
@@ -20,8 +24,9 @@ export default {
     }
   },
   created() {
+    this.$store.dispatch('getData')
     setInterval(() => {
-      this.$store.dispatch('fetch')
+      this.$store.dispatch('getData')
     }, 5000)
   },
 }
@@ -43,12 +48,27 @@ export default {
   overflow: hidden;
   height: 100vh;
   .home {
+    z-index: 1;
     grid-area: 1/1/3/1;
+    &.showSettings {
+      z-index: 1;
+    }
   }
   .settings {
+    z-index: 1;
     grid-area: 2/1/3/1;
     &.showSettings {
+      z-index: 2;
       max-height: 100vh;
+    }
+  }
+  .hider {
+    z-index: 0;
+    grid-area: 1/1/3/1;
+    &.showSettings {
+      z-index: 1;
+      // backdrop-filter: blur(8px);
+      background: rgba(0, 0, 0, 0.157);
     }
   }
 }

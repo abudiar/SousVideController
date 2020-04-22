@@ -6,14 +6,28 @@
         <br>
         <br>
         <div class="form">
-          <BInput :input="String(target)" :left="'Temperature'" :right="scale" @input="$store.dispatch('target',$event)" :inputType="'number'" />
+          <BInput :input="String(targetText)" :left="'Temperature'" :right="scale" 
+          @input="$store.dispatch({
+            type: 'postData',
+            target: $event
+          })"  :inputType="'number'" />
           <div class="container-switch">
             <div class="switch-back switch-button"></div>
             <div class="switch-button">
-              <span class="active" :style="activeSwitchStyle"></span
-              ><button class="switch-button-case left" :class="leftButtonClass" @click="$store.dispatch('scale','C')">
-                Celcius</button
-              ><button class="switch-button-case right" :class="rightButtonClass" @click="$store.dispatch('scale','F')">
+              <span class="active" :style="activeSwitchStyle">
+              </span>
+              <button class="switch-button-case left" :class="leftButtonClass" 
+                @click="$store.dispatch({
+                  type: 'postData',
+                  scale: 'C'
+                })" >
+                Celcius
+              </button>
+              <button class="switch-button-case right" :class="rightButtonClass" 
+                @click="$store.dispatch({
+                  type: 'postData',
+                  scale: 'F'
+                })" >
                 Fahrenheit
               </button>
             </div>
@@ -45,8 +59,8 @@ export default {
     }
   },
   computed: {
-    target() {
-      return this.$store.state.target;
+    targetText() {
+      return this.$store.getters.targetText;
     },
     scale() {
       return this.$store.state.scale;
