@@ -2,32 +2,18 @@
   <div class="home">
     <div class="page-container">
       <div class="page">
-        <TempCircle class="temp-circle"/>
+        <TempCircle class="temp-circle" @showSettings="$emit('showSettings')"/>
         <br>
         <br>
         <div class="form">
-          <!-- <div class="container-switch">
-            <div class="switch-back switch-button"></div>
-            <div class="switch-button input">
-              <div class="middle">
-                <input class="inputText" align="right" type="number" />
-              </div>
-              <div class="left">
-                <p>Temperature</p>
-              </div>
-              <div class="right">
-                <p>°{{scaleInput}}</p>
-              </div>
-            </div>
-          </div> -->
-          <BInput :input="tempInput" :left="'Temperature'" :right="scaleInput" @input="tempInput = $event" :inputType="'number'" />
+          <BInput :input="String(target)" :left="'Temperature'" :right="scale" @input="$store.dispatch('target',$event)" :inputType="'number'" />
           <div class="container-switch">
             <div class="switch-back switch-button"></div>
             <div class="switch-button">
               <span class="active" :style="activeSwitchStyle"></span
-              ><button class="switch-button-case left" :class="leftButtonClass" @click="scaleInput='C'">
+              ><button class="switch-button-case left" :class="leftButtonClass" @click="$store.dispatch('scale','C')">
                 Celcius</button
-              ><button class="switch-button-case right" :class="rightButtonClass" @click="scaleInput='F'">
+              ><button class="switch-button-case right" :class="rightButtonClass" @click="$store.dispatch('scale','F')">
                 Fahrenheit
               </button>
             </div>
@@ -54,36 +40,42 @@ export default {
   },
   data() {
     return {
-      scaleInput: 'C',
-      tempInput: ''
+      // scale: 'C',
+      // target: ''
     }
   },
   computed: {
+    target() {
+      return this.$store.state.target;
+    },
+    scale() {
+      return this.$store.state.scale;
+    },
     leftButtonClass() {
       return {
-        'active-case': this.scaleInput == 'C',
-        'not-active': this.scaleInput != 'C'
+        'active-case': this.scale == 'C',
+        'not-active': this.scale != 'C'
       }
     },
     rightButtonClass() {
       return {
-        'active-case': this.scaleInput == 'F',
-        'not-active': this.scaleInput != 'F'
+        'active-case': this.scale == 'F',
+        'not-active': this.scale != 'F'
       }
     },
     activeSwitchStyle() {
       return {
-        left: this.scaleInput == 'C' ? '0%' : '47%',
-        backgroundPosition: this.scaleInput == 'C' ? '0%' : '100%'
+        left: this.scale == 'C' ? '0%' : '47%',
+        backgroundPosition: this.scale == 'C' ? '0%' : '100%'
       }
     }
   },
   watch: {
-    scaleInput() {
+    scale() {
       // inputTarget.value = validateNum(inputTarget, 1);
     },
-    tempInput() {
-      console.log(this.tempInput);
+    target() {
+      console.log(this.target);
     }
   }
 }
@@ -101,6 +93,7 @@ export default {
   min-height: 100vh;
   width: 100vw;
   max-width: 100vw;
+  overflow-y: auto;
   .page-container {
     grid-area: page;
     padding: 1em;

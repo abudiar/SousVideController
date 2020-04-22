@@ -1,10 +1,11 @@
 <template>
     <div class="container-switch">
-      <div class="switch-back switch-button" :class="{'focused': isFocused}"></div>
+      <div class=" switch-button" :class="{'focused': isFocused}">
+      </div>
       <div class="switch-button input">
         <div class="padl transition" :class="{'focused': isFocused}">
         </div>
-        <div class="padr transition" :class="{'focused': isFocused}">
+        <div v-if="right" class="padr transition" :class="{'focused': isFocused}">
         </div>
         <div class="middle">
           <input class="inputText" 
@@ -18,7 +19,7 @@
         <div class="left">
           <p class="transition" :class="{'focused': isFocused}">{{left}}</p>
         </div>
-        <div class="right">
+        <div v-if="right" class="right">
           <p class="transition" :class="{'focused': isFocused}">°{{right}}</p>
         </div>
       </div>
@@ -92,7 +93,7 @@ export default {
     .focused {
       letter-spacing: 0.1em;
       font-weight: 350;
-      color: rgb(0, 0, 0);
+      color: black;
     }
     .padl {
       grid-area: padl;
