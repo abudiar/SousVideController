@@ -1,9 +1,9 @@
-import { Line, mixins } from 'vue-chartjs'
-const { reactiveProp } = mixins
+// import { Line, mixins } from '_VueChartJs'
+// const { reactiveProp } = mixins
 
 export default {
-  extends: Line,
-  mixins: [reactiveProp],
+  extends: window._VueChartJs.Line,
+  mixins: [window._VueChartJs.mixins.reactiveProp],
   props: ['options', 'chartData'],
   mounted () {
     // this.chartData is created in the mixin.

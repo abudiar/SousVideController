@@ -29,7 +29,6 @@
                 1: { targetAxisIndex: 1 }
             },
             vAxes: {
-                // Adds titles to each axis.
                 0: { title: "Temps (Celsius)", minValue: 0, maxValue: 100 },
                 1: {
                     title: "Power Output",
@@ -42,46 +41,27 @@
                 1: {}
             },
             legend: { position: "bottom" },
-            maintainAspectRatio: false
-        }
+            maintainAspectRatio: false,
+            tooltips: {
+                mode: 'label'
+            }
+        },
+        csvLog: ""
       }
     },
-    // mounted () {
-    //   this.fillData()
-    // },
     methods: {
         getCSV() {
-            // this.$d3
-            // .csv("/log.csv")
-            // .then(this.makeChart);
             this.axios.get('/log.csv')
                 .then(response => {
-                    console.log('getCSV', response);
-                    let arr = response.data.split('\n'); 
-                    var jsonObj = [];
-                    var headers = arr[0].split(',');
-                    for(var i = 1; i < arr.length; i++) {
-                    var data = arr[i].split(',');
-                    var obj = {};
-                    for(var j = 0; j < data.length; j++) {
-                        obj[headers[j].trim()] = data[j].trim();
-                    }
-                    jsonObj.push(obj);
-                    }
-                    this.makeChart(jsonObj);
+                  if (this.csvLog != response.data) {
+                    this.csvLog = response.data;
+                  }
                 })
                 .catch(err => {
                     console.log('getCSV', err);
                 })
         },
         makeChart(temps) {
-            // players is an array of objects where each object is something like:
-            // {
-            //   "Time": "Steffi Graf",
-            //   "Temperature": "377",
-            //   "Power": "Female",
-            //   "Target": 32
-            // }
             console.log('Raw CSV', temps);
 
             let timeData = temps.map(function(d) {
@@ -91,7 +71,7 @@
                 return Number(d.Temperature);
             });
             let powerData = temps.map(function(d) {
-                return Number(d.Power)*100;
+                return Number((Number(d.Power)*100).toFixed(0));
             });
             let targetData = temps.map(function(d) {
                 return Number(d.Target);
@@ -104,23 +84,43 @@
                     label: 'Temperature',
                     data: temperatureData,
                     backgroundColor: "rgba(0,0,0,0)",
-                    borderColor: "red"
+                    borderColor: "red",
+                    pointStyle: "line"
                     }, 
                     {
-                    label: 'Power',
+                    label: 'Duty',
                     data: powerData,
                     backgroundColor: "rgba(208,240,192,0.5)",
-                    borderColor: 'green'
+                    borderColor: 'green',
+                    pointStyle: "line"
                     }, 
                     {
                     label: 'Target',
                     data: targetData,
                     backgroundColor: "rgba(0,0,0,0)",
-                    borderColor: 'blue'
+                    borderColor: 'blue',
+                    pointStyle: "line"
                     }
                 ]
             }
         }
+    },
+    watch: {
+      csvLog() {
+        console.log('Updating Chart');
+        let arr = this.csvLog.split('\n'); 
+        var jsonObj = [];
+        var headers = arr[0].split(',');
+        for(var i = 1; i < arr.length; i++) {
+        var data = arr[i].split(',');
+        var obj = {};
+        for(var j = 0; j < data.length; j++) {
+            obj[headers[j].trim()] = data[j].trim();
+        }
+        jsonObj.push(obj);
+        }
+        this.makeChart(jsonObj);
+      }
     },
     created() {
         this.getCSV();
@@ -133,14 +133,7 @@
 </script>
 
 <style>
-  /* .small {
-    max-height: 10em;
-  } */
   .chart {
     max-height: 20em;
   } 
-  /* canvas {
-      height: 20em !important;
-    width: 100% !important;
-  } */
 </style>

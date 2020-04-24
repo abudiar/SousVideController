@@ -71,7 +71,7 @@ export default new Vuex.Store({
     getData({/* state, */commit}) {
       Vue.axios.get('/data')
         .then((response) => {
-          console.log('getData', response);
+          // console.log('getData', response);
           commit({
             ...response.data,
             isConnected: true,

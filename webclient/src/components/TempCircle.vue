@@ -54,7 +54,7 @@ export default {
           if (this.status == 'nc') 
             return '';
         // return 'Current Temperature';
-        return this.$store.state.output / 10 + '%';
+        return (Number(this.$store.state.output) / 100).toFixed(0) + '% - Duty';
       },
       supText() {
           if (this.status == 'nc') 

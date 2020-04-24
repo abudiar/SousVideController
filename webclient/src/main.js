@@ -9,6 +9,7 @@ import VueAxios from 'vue-axios'
 Vue.use(VueAxios, axios)
 Vue.config.productionTip = false
 Vue.config.devtools = true
+window.Vue = Vue;
 new Vue({
   router,
   store,
