@@ -321,9 +321,9 @@ void printDisplay(String message)
 void loadDefaultPars()
 {
   Setpoint = 60;
-  Kp = 850;
-  Ki = 0.5;
-  Kd = 0.1;
+  Kp = 1400;
+  Ki = 0.8;
+  Kd = 0.5;
   useCelcius = true;
   saveTempArray(Setpoint, 1, setTemp);
 }

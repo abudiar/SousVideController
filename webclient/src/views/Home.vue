@@ -103,7 +103,6 @@ export default {
 
 <style scoped lang="scss">
 .home {
-  background: url("https://images.unsplash.com/photo-1558030006-450675393462?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&w=1000&q=80") no-repeat;
   background-size: cover;
   display: grid;
   grid-template-columns: auto 1fr auto;
