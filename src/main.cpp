@@ -71,7 +71,7 @@ const char *logPath = "/log.csv";     // Log file
 
 #pragma region Local Variables
 bool loadAnim = true;               // Oscicillates on loading animation
-bool newLog = true;                 // New log file?
+bool newLog = false;                 // New log file?
 int numberOfProbes;                 // Number of temperature probes found
 DeviceAddress tempDeviceAddress;    // Store Probe Address
 long lastRunTime = 0;               // Last run time
@@ -158,11 +158,18 @@ String getTimeDigits(int digits)
 String formatTime(time_t time)
 {
   String t = "";
-  t += hour(time);
-  t += ":";
-  t += getTimeDigits(minute(time));
-  t += ":";
+  // t += hour(time);
+  // t += ":";
+  // t += getTimeDigits(minute(time));
+  // t += ":";
+  // t += getTimeDigits(second(time));
+  // t += hour(time)*60*60+minute(time)*60+second(time);
+  t += hour(time) > 0 ? (String)hour(time) : "";
+  t += hour(time) > 0 ? "h" : "";
+  t += minute(time) > 0 ? getTimeDigits(minute(time)) : "";
+  t += minute(time) > 0 ? "m" : "";
   t += getTimeDigits(second(time));
+  t += "s";
   return t;
 }
 

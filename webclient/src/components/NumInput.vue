@@ -3,10 +3,10 @@
       <div class=" switch-button" :class="{'focused': isFocused}">
       </div>
       <div class="switch-button input">
-        <div class="padl transition" :class="{'focused': isFocused}">
-        </div>
-        <div v-if="right" class="padr transition" :class="{'focused': isFocused}">
-        </div>
+        <!-- <div class="padl transition" :class="{'focused': isFocused}">
+        </div> -->
+        <!-- <div v-if="right" class="padr transition" :class="{'focused': isFocused}">
+        </div> -->
         <div class="middle">
           <input class="inputText" 
             align="right" 
@@ -49,9 +49,9 @@ export default {
 <style scoped lang="scss">
   .input {
     display: grid;
-    grid-template-columns: auto auto auto auto auto;
+    grid-template-columns: auto 1fr auto;
     grid-template-areas: 
-        "padl left middle right padr";
+        "left middle right";
     padding: 0 2em;
     p {
       color: rgba(0, 0, 0, 0.418);

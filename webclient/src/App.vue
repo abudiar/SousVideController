@@ -59,7 +59,7 @@ export default {
     grid-area: 2/1/3/1;
     &.showSettings {
       z-index: 2;
-      max-height: 100vh;
+      max-height: 120vh;
     }
   }
   .hider {

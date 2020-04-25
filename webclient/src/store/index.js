@@ -36,9 +36,19 @@ export default new Vuex.Store({
         return '';
       switch(state.scale) {
         case 'C':
-          return state.temp;
+          return Number(state.temp).toFixed(1);
         case 'F':
-          return Math.round(((state.temp * 9) / 5 + 32) * 100) / 100;
+          return ((Number(state.temp) * 9) / 5 + 32).toFixed(1);
+      }
+    },
+    subText(state, getters) {
+      switch(getters.status) {
+        case 'nc':
+          return 'Disconnected';
+        case 'stopped':
+          return 'Current Temperature';
+        default:
+          return (Number(state.output)/100).toFixed(1) + '% Duty';
       }
     },
     stateText(state, getters) {
@@ -51,9 +61,9 @@ export default new Vuex.Store({
         return '';
       switch(state.scale) {
         case 'C':
-          return state.target;
+          return Number(state.target).toFixed(1);
         case 'F':
-          return Math.round(((state.target * 9) / 5 + 32) * 100) / 100;
+          return ((Number(state.target) * 9) / 5 + 32).toFixed(1);
       }
     },
   },

@@ -51,10 +51,7 @@ export default {
           return statusClass;
       },
       subText() {
-          if (this.status == 'nc') 
-            return '';
-        // return 'Current Temperature';
-        return (Number(this.$store.state.output) / 100).toFixed(0) + '% - Duty';
+        return this.$store.getters.subText;
       },
       supText() {
           if (this.status == 'nc') 
@@ -62,7 +59,7 @@ export default {
           return '°' + this.scale;
       },
       tempText() {
-          return Number(this.$store.getters.tempText).toFixed(1);
+          return this.$store.getters.tempText;
       },
       stateText() {
           return this.$store.getters.stateText;
@@ -141,10 +138,11 @@ export default {
                 grid-area: top;
                 display: flex;
                 flex-direction: column;
-                justify-content: center;
+                justify-content: flex-end;
                 letter-spacing: .2rem;
                 text-transform: uppercase;
-                margin-top: 1.5em;
+                // padding-top: 1.5em;
+                font-size: 1.2em;
             }
             .middle {
                 grid-area: middle;
@@ -163,7 +161,7 @@ export default {
                     grid-template-rows: auto;
                     grid-template-areas: 
                         "temp sup";
-                    margin-bottom: -.6em;
+                    margin-top: -.4em;
                     .temp {
                         grid-area: temp;
                         font-size: 2.8em;
@@ -179,8 +177,10 @@ export default {
                     }
                 }
                 .sub {
+                    margin-top: -.6em;
                     grid-area: sub;
                     color: rgba(255, 255, 255, 0.6);
+                    font-size: 0.8em;
                 }
             }
             .bottom {
