@@ -7,11 +7,14 @@ import os
 # copy subdirectory example
 
 
-source_dir = "webpage"
+source_dir = "webclient/dist"
 dest_dir = "data"
 
 if os.path.exists(dest_dir):
     shutil.rmtree(dest_dir)
+
+if not os.path.exists(dest_dir):
+    os.makedirs(dest_dir)
 
 
 copy_tree(source_dir, dest_dir)
@@ -28,5 +31,5 @@ copy_tree(source_dir, dest_dir)
 # for path in Path(dest_dir).rglob('*'):
 #     print(path.name)
 
-os.system('gzip -r ' + dest_dir + '\*')
-os.system(r'C:\Users\alanw\.platformio\penv\Scripts\platformio.exe run --target uploadfs')
+os.system('gzip -r ' + dest_dir)
+os.system(r'C:\Users\Alan\.platformio\penv\Scripts\platformio.exe run --target uploadfs')

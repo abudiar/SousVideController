@@ -34,9 +34,9 @@
 #pragma endregion
 
 #pragma region Pins
-#define heaterPin D0  // Heater Relay pin
+#define heaterPin D5  // Heater Relay pin
 #define builtinLed D4 // Built in LED
-#define tempBus D5    // Temperature Probes
+#define tempBus D7    // Temperature Probes
 #define OLED_RESET -1 // Reset pin # (or -1 if sharing Arduino reset pin)
 #pragma endregion
 
@@ -63,7 +63,7 @@ static const char ntpServerName[] = "pool.ntp.org"; // Random NTP Pool
 const int timeZone = 7;                             // Jakarta Time
 // Serial
 const int baudRate = 9600;         // Serial Baud Rate
-const int logInterval = 20 * 1000; // log every 20 secs
+int logInterval = 20 * 1000; // log every 60 secs
 // Config
 const char *cfgPath = "/config.json"; // Config file
 const char *logPath = "/log.csv";     // Log file
@@ -71,7 +71,7 @@ const char *logPath = "/log.csv";     // Log file
 
 #pragma region Local Variables
 bool loadAnim = true;               // Oscicillates on loading animation
-bool newLog = true;                 // New log file?
+bool newLog = false;                 // New log file?
 int numberOfProbes;                 // Number of temperature probes found
 DeviceAddress tempDeviceAddress;    // Store Probe Address
 long lastRunTime = 0;               // Last run time
@@ -111,9 +111,11 @@ int WindowSize = 10000;
 unsigned long windowStartTime;
 // PID AutoTune
 byte ATuneModeRemember = 2;
-double aTuneStep = 500;
-double aTuneNoise = 1;
-unsigned int aTuneLookBack = 20;
+int aTuneControlType = 1; // 0 = PI, 1 = PID
+double aTuneStartValue = WindowSize / 2;
+double aTuneStep = aTuneStartValue;
+double aTuneNoise = 0.2;
+unsigned int aTuneLookBack = 90;
 boolean tuning = false;
 #pragma endregion
 
@@ -156,11 +158,18 @@ String getTimeDigits(int digits)
 String formatTime(time_t time)
 {
   String t = "";
-  t += hour(time);
-  t += ":";
-  t += getTimeDigits(minute(time));
-  t += ":";
+  // t += hour(time);
+  // t += ":";
+  // t += getTimeDigits(minute(time));
+  // t += ":";
+  // t += getTimeDigits(second(time));
+  // t += hour(time)*60*60+minute(time)*60+second(time);
+  t += hour(time) > 0 ? (String)hour(time) : "";
+  t += hour(time) > 0 ? "h" : "";
+  t += minute(time) > 0 ? getTimeDigits(minute(time)) : "";
+  t += minute(time) > 0 ? "m" : "";
   t += getTimeDigits(second(time));
+  t += "s";
   return t;
 }
 
@@ -312,9 +321,9 @@ void printDisplay(String message)
 void loadDefaultPars()
 {
   Setpoint = 60;
-  Kp = 850;
-  Ki = 0.5;
-  Kd = 0.1;
+  Kp = 1400;
+  Ki = 0.8;
+  Kd = 0.5;
   useCelcius = true;
   saveTempArray(Setpoint, 1, setTemp);
 }
@@ -521,6 +530,8 @@ void StartAutoTune()
   ATuneModeRemember = myPID.GetMode();
 
   // set up the auto-tune parameters
+  Output=aTuneStartValue;
+  aTune.SetControlType(aTuneControlType);
   aTune.SetNoiseBand(aTuneNoise);
   aTune.SetOutputStep(aTuneStep);
   aTune.SetLookbackSec((int)aTuneLookBack);
@@ -904,74 +915,79 @@ String getState()
 {
   if (opState == OFF)
   {
+    if (tuning)
+      return "Tuning(Off)";
     return "Off";
   }
   else if (opState == RUN)
   {
+    if (tuning)
+      return "Tuning(Run)";
     if (!isPreheated)
       return "Preheat";
     return "Ready";
   }
   return "";
 }
-// Process command from webpage
-String processCommand(String cmd)
-{
-  if (cmd == "start")
-  {
-    Serial.println("Starting Sous Vide");
-    start = true;
-    startTime = now();
-    return "Started Sous Vide";
-  }
-  else if (cmd == "stop")
-  {
-    Serial.println("Stopping Sous Vide");
-    start = false;
-    opState = OFF;
-    return "Stopped Sous Vide";
-  }
-  else if (cmd == "autotune")
-  {
-    Serial.println("Starting Autotune");
-    StartAutoTune();
-    return "Autotune started";
-  }
-  return "Invalid command";
-}
 
 // Process settings from json of webpage
 String processSettings(StaticJsonDocument<256> data)
 {
-  if (data.containsKey("pageNum") == 1)
-  {
-    int pageNum = data["pageNum"].as<int>();
-    if (pageNum == 0 && data.containsKey("scale") == 1 && data.containsKey("target") == 1)
-    {
-      if (data["scale"].as<String>() == "C")
-      {
-        useCelcius = true;
-      }
-      else
-      {
-        useCelcius = false;
-      }
-      Setpoint = data["target"].as<double>();
-      savePars();
-      DoControl();
-      return "Settings on Home Page Saved";
-    }
-    else if (pageNum == 1 && data.containsKey("kp") == 1 && data.containsKey("ki") == 1 && data.containsKey("kd") == 1)
-    {
-      Kp = data["kp"].as<double>();
-      Ki = data["ki"].as<double>();
-      Kd = data["kd"].as<double>();
-      savePars();
-      DoControl();
-      return "Settings on Settings Page Saved";
-    }
+  String result = "Updated ";
+  if (data.containsKey("scale") == 1) {
+    if (data["scale"].as<String>() == "C")
+      useCelcius = true;
+    else
+      useCelcius = false;
+    result += "| useCelcius ";
   }
-  return "Invalid Settings";
+  if (data.containsKey("target") == 1) {
+    Setpoint = data["target"].as<double>();
+    result += "| Setpoint ";
+  }
+  if (data.containsKey("kp") == 1) {
+      Kp = data["kp"].as<double>();
+    result += "| Kp ";
+  }
+  if (data.containsKey("ki") == 1) {
+      Ki = data["ki"].as<double>();
+    result += "| Ki ";
+  }
+  if (data.containsKey("kd") == 1) {
+      Kd = data["kd"].as<double>();
+    result += "| Kd ";
+  }
+  if (data.containsKey("logInterval") == 1) {
+      logInterval = data["logInterval"].as<int>();
+    result += "| logInterval ";
+  }
+  savePars();
+  DoControl();
+  
+  String stringData = "";
+  serializeJson(data, stringData);
+  // Serial.println(stringData);
+  return stringData;
+  // return result;
+  // if (data.containsKey("pageNum") == 1)
+  // {
+  //   int pageNum = data["pageNum"].as<int>();
+  //   if (pageNum == 0 && data.containsKey("scale") == 1 && data.containsKey("target") == 1)
+  //   {
+  //     savePars();
+  //     DoControl();
+  //     return "Settings on Home Page Saved";
+  //   }
+  //   else if (pageNum == 1 && data.containsKey("kp") == 1 && data.containsKey("ki") == 1 && data.containsKey("kd") == 1)
+  //   {
+  //     Kp = data["kp"].as<double>();
+  //     Ki = data["ki"].as<double>();
+  //     Kd = data["kd"].as<double>();
+  //     savePars();
+  //     DoControl();
+  //     return "Settings on Settings Page Saved";
+  //   }
+  // }
 }
 
 String packSettings()
@@ -985,9 +1001,39 @@ String packSettings()
   dataObj["kp"] = (String)Kp;
   dataObj["ki"] = (String)Ki;
   dataObj["kd"] = (String)Kd;
+  dataObj["output"] = (String)Output;
+  dataObj["input"] = (String)Input;
   serializeJson(dataObj, stringData);
   // Serial.println(stringData);
   return stringData;
+}
+// Process command from webpage
+String processCommand(String cmd)
+{
+  if (cmd == "start")
+  {
+    Serial.println("Starting Sous Vide");
+    start = true;
+    startTime = now();
+    return packSettings();
+  }
+  else if (cmd == "stop")
+  {
+    Serial.println("Stopping Sous Vide");
+    start = false;
+    opState = OFF;
+    aTune.Cancel();
+    return packSettings();
+  }
+  else if (cmd == "autotune")
+  {
+    Serial.println("Starting Autotune");
+    StartAutoTune();
+    start = true;
+    startTime = now();
+    return packSettings();
+  }
+  return "Invalid command";
 }
 
 String getContentType(AsyncWebServerRequest *request, String filename)
@@ -1082,7 +1128,7 @@ bool handleFileRead(AsyncWebServerRequest *request, String path)
 #pragma region Server
 void setupServer()
 {
-  server.on("/update", HTTP_GET, [](AsyncWebServerRequest *request) {
+  server.on("/data", HTTP_POST, [](AsyncWebServerRequest *request) {
     printServerRequest(request);
     StaticJsonDocument<256> data;
     if (request->hasParam("data"))
@@ -1099,7 +1145,7 @@ void setupServer()
     request->send_P(200, "text/plain", processSettings(data).c_str());
   });
 
-  server.on("/command", HTTP_GET, [](AsyncWebServerRequest *request) {
+  server.on("/command", HTTP_POST, [](AsyncWebServerRequest *request) {
     printServerRequest(request);
     bool isSuccess = false;
     String cmd = "";
@@ -1112,7 +1158,7 @@ void setupServer()
       request->send_P(200, "text/plain", BoolToString(false));
   });
 
-  server.on("/fetch", HTTP_GET, [](AsyncWebServerRequest *request) {
+  server.on("/data", HTTP_GET, [](AsyncWebServerRequest *request) {
     printServerRequest(request);
     request->send_P(200, "text/plain", packSettings().c_str());
   });
@@ -1189,6 +1235,13 @@ void Off()
   String tempText = (String)roundTemp + "C";
   printCenterX(tempText, rTempDisp);
   printCenterX("OFF", rPctDisp);
+  // Read the input:
+  if (sensors.isConversionComplete())
+  {
+    Input = sensors.getTempC(tempDeviceAddress);
+    saveTempArray(Input, 1, dispTemp);
+    sensors.requestTemperatures(); // prime the pump for the next one - but don't wait
+  }
 
   if (start)
   {
