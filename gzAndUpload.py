@@ -7,7 +7,7 @@ import os
 # copy subdirectory example
 
 
-source_dir = "webclient/dist"
+source_dir = "client/dist"
 dest_dir = "data"
 
 if os.path.exists(dest_dir):

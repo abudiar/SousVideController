@@ -34,10 +34,11 @@
 #pragma endregion
 
 #pragma region Pins
-#define heaterPin D5  // Heater Relay pin
-#define builtinLed D4 // Built in LED
-#define tempBus D7    // Temperature Probes
-#define OLED_RESET -1 // Reset pin # (or -1 if sharing Arduino reset pin)
+#define heaterPin D6   // Heater Relay pin
+#define builtinLed D4  // Built in LED
+#define tempBus D7     // Temperature Probes
+#define OLED_RESET -1  // Reset pin # (or -1 if sharing Arduino reset pin)
+#define heaterNO false // Heater normally open? (high = on, low = off)
 #pragma endregion
 
 #pragma region Settings
@@ -53,16 +54,16 @@ const int rPctDisp[] = {45, 2};  // Percentage Display Settings
 const int rTuneDisp[] = {9, 1};  // Tuning Display Settings
 const int stateDisp[] = {25, 2}; // State Machine Display Settings
 // WiFi Settings
-const char *wifiSSID = "Sous Vide"; // WiFi Manager SSID
-const char *wifiPass = "password";  // WiFi Manager Password
-bool resetWifi = false;             // Set to true to reset Wifi Settings on run
-#define SERVER_PORT 80              // WebServer Port
-unsigned int localPort = 1337;      // local port to listen for UDP packets
+const char *wifiSSID = "SousVide"; // WiFi Manager SSID
+const char *wifiPass = "password"; // WiFi Manager PasswordP
+bool resetWifi = false;            // Set to true to reset Wifi Settings on run
+#define SERVER_PORT 80             // WebServer Port
+unsigned int localPort = 1337;     // local port to listen for UDP packets
 // Time
 static const char ntpServerName[] = "pool.ntp.org"; // Random NTP Pool
 const int timeZone = 7;                             // Jakarta Time
 // Serial
-const int baudRate = 9600;         // Serial Baud Rate
+const int baudRate = 9600;   // Serial Baud Rate
 int logInterval = 20 * 1000; // log every 60 secs
 // Config
 const char *cfgPath = "/config.json"; // Config file
@@ -71,7 +72,7 @@ const char *logPath = "/log.csv";     // Log file
 
 #pragma region Local Variables
 bool loadAnim = true;               // Oscicillates on loading animation
-bool newLog = false;                 // New log file?
+bool newLog = false;                // New log file?
 int numberOfProbes;                 // Number of temperature probes found
 DeviceAddress tempDeviceAddress;    // Store Probe Address
 long lastRunTime = 0;               // Last run time
@@ -88,6 +89,7 @@ time_t timeSinceStart = 0;          // Time since sous vide start
 WiFiUDP Udp;                        // UDP
 const int NTP_PACKET_SIZE = 48;     // NTP time is in the first 48 bytes of message
 byte packetBuffer[NTP_PACKET_SIZE]; // NTP buffer to hold incoming & outgoing packets
+int currentHeaterStatus = 2;
 // State Machine
 enum operatingState
 {
@@ -139,6 +141,41 @@ void sendNTPpacket(IPAddress &address);
 #pragma endregion
 
 #pragma region Functions
+
+void pinWrite(int hl)
+{
+  // if (currentHeaterStatus != hl)
+  // {
+  // currentHeaterStatus = hl;
+  if (heaterNO)
+  {
+    if (hl == 1)
+    {
+      // Serial.println("heaterNO: HL 1, pin HIGH");
+      digitalWrite(heaterPin, HIGH);
+    }
+    else
+    {
+      // Serial.println("heaterNO: HL 0, pin LOW");
+      digitalWrite(heaterPin, LOW);
+    }
+  }
+  else
+  {
+    if (hl == 1)
+    {
+      // Serial.println("heaterNC: HL 1, pin LOW");
+      digitalWrite(heaterPin, LOW);
+    }
+    else
+    {
+      // Serial.println("heaterNC: HL 0, pin HIGH");
+      digitalWrite(heaterPin, HIGH);
+    }
+  }
+  // }
+}
+
 #pragma region Time
 // Returns a string of digits in format XX
 String getTimeDigits(int digits)
@@ -498,11 +535,11 @@ void DriveOutput()
   }
   if ((onTime > 100) && (onTime > (now - windowStartTime)))
   {
-    digitalWrite(heaterPin, HIGH);
+    pinWrite(1);
   }
   else
   {
-    digitalWrite(heaterPin, LOW);
+    pinWrite(0);
   }
 }
 
@@ -513,7 +550,7 @@ void timerTick()
   timer1_write(next);
   if (opState == OFF)
   {
-    digitalWrite(heaterPin, LOW); // make sure relay is off
+    pinWrite(0); // make sure relay is off
   }
   else
   {
@@ -530,7 +567,7 @@ void StartAutoTune()
   ATuneModeRemember = myPID.GetMode();
 
   // set up the auto-tune parameters
-  Output=aTuneStartValue;
+  Output = aTuneStartValue;
   aTune.SetControlType(aTuneControlType);
   aTune.SetNoiseBand(aTuneNoise);
   aTune.SetOutputStep(aTuneStep);
@@ -633,10 +670,10 @@ void setupWifiManager()
     ESP.reset();
   }
   AsyncWiFiManager wifiManager(&server, &dns);
-  IPAddress ip(192, 168, 0, 196);
-  IPAddress gateway(192, 168, 0, 1);
-  IPAddress subnet(255, 255, 255, 0);
-  wifiManager.setSTAStaticIPConfig(ip, gateway, subnet);
+  // IPAddress ip(192, 168, 1, 196);
+  // IPAddress gateway(192, 168, 1, 2);
+  // IPAddress subnet(255, 255, 255, 0);
+  // wifiManager.setSTAStaticIPConfig(ip, gateway, subnet);
   String temp = "Connect on ";
   temp += wifiSSID;
   temp += " at 192.168.4.1";
@@ -934,36 +971,42 @@ String getState()
 String processSettings(StaticJsonDocument<256> data)
 {
   String result = "Updated ";
-  if (data.containsKey("scale") == 1) {
+  if (data.containsKey("scale") == 1)
+  {
     if (data["scale"].as<String>() == "C")
       useCelcius = true;
     else
       useCelcius = false;
     result += "| useCelcius ";
   }
-  if (data.containsKey("target") == 1) {
+  if (data.containsKey("target") == 1)
+  {
     Setpoint = data["target"].as<double>();
     result += "| Setpoint ";
   }
-  if (data.containsKey("kp") == 1) {
-      Kp = data["kp"].as<double>();
+  if (data.containsKey("kp") == 1)
+  {
+    Kp = data["kp"].as<double>();
     result += "| Kp ";
   }
-  if (data.containsKey("ki") == 1) {
-      Ki = data["ki"].as<double>();
+  if (data.containsKey("ki") == 1)
+  {
+    Ki = data["ki"].as<double>();
     result += "| Ki ";
   }
-  if (data.containsKey("kd") == 1) {
-      Kd = data["kd"].as<double>();
+  if (data.containsKey("kd") == 1)
+  {
+    Kd = data["kd"].as<double>();
     result += "| Kd ";
   }
-  if (data.containsKey("logInterval") == 1) {
-      logInterval = data["logInterval"].as<int>();
+  if (data.containsKey("logInterval") == 1)
+  {
+    logInterval = data["logInterval"].as<int>();
     result += "| logInterval ";
   }
   savePars();
   DoControl();
-  
+
   String stringData = "";
   serializeJson(data, stringData);
   // Serial.println(stringData);
@@ -1228,7 +1271,7 @@ void setup()
 void Off()
 {
   myPID.SetMode(MANUAL);
-  digitalWrite(heaterPin, LOW); // make sure it is off
+  pinWrite(0); // make sure it is off
   // uint8_t buttons = 0;
   printCenterX(WiFi.localIP().toString(), ipDisp);
   double roundTemp = round(Input * 10) / 10;
